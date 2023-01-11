@@ -5,11 +5,10 @@ export default function Index() {
         <div className="max-w-md">
           <h1 className="text-5xl font-bold">Released.today</h1>
           <p className="py-6">
-            Provident cupiditate voluptatem et in. Quaerat fugiat ut assumenda
-            excepturi exercitationem quasi. In deleniti eaque aut repudiandae et
-            a id nisi.
+            Receive an email everytime there are new releases from your
+            favourite artists.
           </p>
-          <button className="btn btn-primary">Get Started</button>
+          <button className="btn btn-primary">Sign in with Spotify</button>
         </div>
       </div>
     </div>
