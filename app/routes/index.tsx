@@ -1,38 +1,21 @@
 import type { LoaderArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { Form } from "@remix-run/react";
-import { z } from "zod";
 
-import { prisma } from "~/db.server";
-import { getUserByUid } from "~/models/user.server";
+import { findOrCreateUserFromSpotify, SpotifyUser } from "~/models/user.server";
 import { spotifyStrategy } from "~/services/auth.server";
-
-const SpotifyUser = z.object({
-  id: z.string(),
-  name: z.string(),
-  email: z.string().email(),
-  image: z.string().url(),
-});
 
 export async function loader({ request }: LoaderArgs) {
   const session = await spotifyStrategy.getSession(request);
 
-  const parsedSession = SpotifyUser.safeParse(session?.user);
-  if (!parsedSession.success) return session;
+  try {
+    const spotifyUser = SpotifyUser.parse(session?.user);
+    await findOrCreateUserFromSpotify(spotifyUser);
 
-  const spotifyUser = parsedSession.data;
-
-  if (await getUserByUid(spotifyUser.id)) return redirect("/dashboard");
-
-  await prisma.user.create({
-    data: {
-      email: spotifyUser.email,
-      uid: spotifyUser.id,
-      provider: "spotify",
-    },
-  });
-
-  return redirect("/dashboard");
+    return redirect("/dashboard");
+  } catch (error) {
+    return null;
+  }
 }
 
 export default function Index() {
