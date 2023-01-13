@@ -1,16 +1,41 @@
 import type { LoaderArgs } from "@remix-run/node";
-import { Form, useLoaderData } from "@remix-run/react";
+import { redirect } from "@remix-run/node";
+import { Form } from "@remix-run/react";
+import { z } from "zod";
 
+import { prisma } from "~/db.server";
+import { getUserByUid } from "~/models/user.server";
 import { spotifyStrategy } from "~/services/auth.server";
 
+const SpotifyUser = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string().email(),
+  image: z.string().url(),
+});
+
 export async function loader({ request }: LoaderArgs) {
-  return spotifyStrategy.getSession(request);
+  const session = await spotifyStrategy.getSession(request);
+
+  const parsedSession = SpotifyUser.safeParse(session?.user);
+  if (!parsedSession.success) return session;
+
+  const spotifyUser = parsedSession.data;
+
+  if (await getUserByUid(spotifyUser.id)) return redirect("/dashboard");
+
+  await prisma.user.create({
+    data: {
+      email: spotifyUser.email,
+      uid: spotifyUser.id,
+      provider: "spotify",
+    },
+  });
+
+  return redirect("/dashboard");
 }
 
 export default function Index() {
-  const data = useLoaderData<typeof loader>();
-  const user = data?.user;
-
   return (
     <div className="hero min-h-screen bg-base-200">
       <div className="hero-content text-center">
@@ -20,18 +45,9 @@ export default function Index() {
             Receive an email everytime there are new releases from your
             favourite artists.
           </p>
-          {user ? (
-            <>
-              <p>You are logged in as: {user?.email}</p>
-              <Form action="/logout" method="post" className="mt-4">
-                <button className="btn btn-warning">Logout</button>
-              </Form>
-            </>
-          ) : (
-            <Form action="/auth/spotify" method="post">
-              <button className="btn btn-primary">Sign in with Spotify</button>
-            </Form>
-          )}
+          <Form action="/auth/spotify" method="post">
+            <button className="btn btn-primary">Sign in with Spotify</button>
+          </Form>
         </div>
       </div>
     </div>
