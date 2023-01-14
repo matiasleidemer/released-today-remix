@@ -12,13 +12,12 @@ export const SpotifyUser = z.object({
   image: z.string().url(),
 });
 
-export async function getUserByUid(uid: User["uid"]) {
-  return prisma.user.findUnique({ where: { uid } });
-}
+export const getUserByUid = async (uid: User["uid"]) =>
+  prisma.user.findUnique({ where: { uid } });
 
-export async function findOrCreateUserFromSpotify(
+export const findOrCreateUserFromSpotify = async (
   spotifyUser: z.infer<typeof SpotifyUser>
-) {
+) => {
   const user = await getUserByUid(spotifyUser.id);
   if (user) return user;
 
@@ -29,4 +28,4 @@ export async function findOrCreateUserFromSpotify(
       provider: "spotify",
     },
   });
-}
+};
