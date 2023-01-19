@@ -1,31 +1,27 @@
-import type { User } from "@prisma/client";
-import { z } from "zod";
-
 import { prisma } from "~/db.server";
+
+import type { User, Artist } from "@prisma/client";
+import type { SpotifyUser } from "./spotify.server";
 
 export type { User } from "@prisma/client";
 
-export const SpotifyUser = z.object({
-  id: z.string(),
-  name: z.string(),
-  email: z.string().email(),
-  image: z.string().url(),
-});
+export const createUser = (user: SpotifyUser) =>
+  prisma.user.create({
+    data: {
+      name: user.name,
+      email: user.email,
+      uid: user.id,
+      provider: "spotify",
+      metadata: JSON.stringify(user),
+    },
+  });
 
 export const getUserByUid = async (uid: User["uid"]) =>
   prisma.user.findUnique({ where: { uid } });
 
-export const findOrCreateUserFromSpotify = async (
-  spotifyUser: z.infer<typeof SpotifyUser>
-) => {
-  const user = await getUserByUid(spotifyUser.id);
-  if (user) return user;
-
-  return prisma.user.create({
-    data: {
-      email: spotifyUser.email,
-      uid: spotifyUser.id,
-      provider: "spotify",
-    },
+export const followArtist = async (user: User, artist: Artist) => {
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { artists: { connect: { id: artist.id } } },
   });
 };

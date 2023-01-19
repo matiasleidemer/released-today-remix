@@ -22,6 +22,7 @@ export default function Index() {
         <div className="max-w-md">
           <h1 className="text-5xl font-bold">Dashboard</h1>
 
+          <p>Hello {user?.name}</p>
           <p>You are logged in as: {user?.email}</p>
 
           <Form action="/logout" method="post" className="mt-4">

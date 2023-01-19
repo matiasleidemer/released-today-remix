@@ -2,18 +2,25 @@ import type { LoaderArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { Form } from "@remix-run/react";
 
-import { findOrCreateUserFromSpotify, SpotifyUser } from "~/models/user.server";
 import { spotifyStrategy } from "~/services/auth.server";
+import { userClient, SpotifyUserSchema } from "~/models/spotify.server";
+import { getUserByUid } from "~/models/user.server";
+import { signUpUser } from "~/services/signUpUser.server";
 
 export async function loader({ request }: LoaderArgs) {
   const session = await spotifyStrategy.getSession(request);
 
+  if (session === null) return null;
+
   try {
-    const spotifyUser = SpotifyUser.parse(session?.user);
-    await findOrCreateUserFromSpotify(spotifyUser);
+    const spotifyUser = SpotifyUserSchema.parse(session?.user);
+    if (await getUserByUid(spotifyUser.id)) return redirect("/dashboard");
+
+    await signUpUser(spotifyUser, userClient(session.accessToken));
 
     return redirect("/dashboard");
   } catch (error) {
+    console.error(error);
     return null;
   }
 }

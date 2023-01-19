@@ -1,10 +1,23 @@
 import { Client, UserClient, TimeRange } from "spotify-api.js";
+import { z } from "zod";
+
 import type { Artist } from "spotify-api.js";
 
-export const spotifyUserClient = (token: string) =>
+export const SpotifyUserSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string().email(),
+  image: z.string().url(),
+});
+
+export type SpotifyUser = z.infer<typeof SpotifyUserSchema>;
+export type SpotifyArtist = Artist;
+export type SpotifyUserClient = UserClient;
+
+export const userClient = (token: string) =>
   new UserClient(new Client({ token }));
 
-export const getTopArtists = async (client: UserClient) => {
+export const fetchTopArtists = async (client: UserClient) => {
   const artists = new Array<Artist>();
 
   const addArtist = (newArtist: Artist) => {
